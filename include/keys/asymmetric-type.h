@@ -81,6 +81,10 @@ extern struct key *find_asymmetric_key(struct key *keyring,
 				       const struct asymmetric_key_id *id_1,
 				       bool partial);
 
+extern int load_asymmetric_keys_from_buffer(struct key *keys,
+					    const u8 *buf,
+					    unsigned int buflen);
+
 /*
  * The payload is at the discretion of the subtype.
  */

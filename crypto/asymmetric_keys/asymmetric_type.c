@@ -127,6 +127,61 @@ reject:
 EXPORT_SYMBOL_GPL(find_asymmetric_key);
 
 /**
+ * load_asymmetric_keys_from_buffer: Load asymmetric keys from loaded buffer
+ * @key: keyrint to populate
+ * @buf: buffer holding DER-encoded keys
+ * @buflen: length of the buffer
+ *
+ * Populate provided keyring with keys loaded from buffer.
+ */
+int load_asymmetric_keys_from_buffer(struct key *keys,
+				     const u8 *buf,
+				     unsigned int buflen)
+{
+	const u8 *end = buf + buflen;
+	size_t plen;
+	key_ref_t key;
+
+	while (buf < end) {
+		/* Each cert begins with an ASN.1 SEQUENCE tag and must be more
+		 * than 256 bytes in size.
+		 */
+		if (end - buf < 4)
+			goto dodgy_cert;
+		if (buf[0] != 0x30 &&
+		    buf[1] != 0x82)
+			goto dodgy_cert;
+		plen = (buf[2] << 8) | buf[3];
+		plen += 4;
+		if (plen > end - buf)
+			goto dodgy_cert;
+
+		key = key_create_or_update(make_key_ref(keys, 1),
+					   "asymmetric", NULL, buf, plen,
+					   ((KEY_POS_ALL & ~KEY_POS_SETATTR) |
+					    KEY_USR_VIEW | KEY_USR_READ),
+					   KEY_ALLOC_NOT_IN_QUOTA |
+					   KEY_ALLOC_BUILT_IN |
+					   KEY_ALLOC_BYPASS_RESTRICTION);
+		if (IS_ERR(key)) {
+			pr_err("Problem loading X.509 certificate (%ld)\n",
+			       PTR_ERR(key));
+		} else {
+			pr_notice("Loaded X.509 cert '%s'\n",
+				  key_ref_to_ptr(key)->description);
+			key_ref_put(key);
+		}
+		buf += plen;
+	}
+
+	return 0;
+
+dodgy_cert:
+	return -EBADMSG;
+}
+EXPORT_SYMBOL_GPL(load_asymmetric_keys_from_buffer);
+
+/**
  * asymmetric_key_generate_id: Construct an asymmetric key ID
  * @val_1: First binary blob
  * @len_1: Length of first binary blob
