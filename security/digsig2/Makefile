@@ -16,7 +16,7 @@ quiet_cmd_extract_certs  = EXTRACT_CERTS   $(patsubst "%",%,$(2))
       cmd_extract_certs  = scripts/extract-cert $(2) $@ || ( rm $@; exit 1)
 
 targets += x509_certificate_list
-$(obj)/x509_certificate_list: scripts/extract-cert $(DIGSIG2_TRUSTED_KEYS_SRCPREFIX)$(DIGSIG2_TRUSTED_KEYS_FILENAME) FORCE
-	$(call if_changed,extract_certs,$(DIGSIG2_TRUSTED_KEYS_SRCPREFIX)$(CONFIG_DIGSIG2_TRUSTED_KEYS))
+$(obj)/x509_certificate_list: scripts/extract-cert $(SECURITY_DIGSIG2_TRUSTED_KEYS_SRCPREFIX)$(SECURITY_DIGSIG2_TRUSTED_KEYS_FILENAME) FORCE
+	$(call if_changed,extract_certs,$(SECURITY_DIGSIG2_TRUSTED_KEYS_SRCPREFIX)$(CONFIG_SECURITY_DIGSIG2_TRUSTED_KEYS))
 
 endif #CONFIG_SECURITY_DIGSIG2

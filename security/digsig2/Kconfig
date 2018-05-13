@@ -12,7 +12,7 @@ config SECURITY_DIGSIG2
 	  If you are unsure how to answer this question, answer N.
 
 if SECURITY_DIGSIG2
-config DIGSIG2_TRUSTED_KEYS
+config SECURITY_DIGSIG2_TRUSTED_KEYS
 	string "X.509 keys for DigSig2 keyring"
 	help
 	  If set, this option should be the filename of a PEM-formatted file
