@@ -23,6 +23,22 @@
 
 static struct key *builtin_digsig_keys;
 
+#ifdef CONFIG_SECURITY_DIGSIG2_DEVELOP
+int digsig_enforcing;
+
+static int __init enforcing_setup(char *str)
+{
+	unsigned long enforcing;
+
+	if (!kstrtoul(str, 0, &enforcing))
+		digsig_enforcing = enforcing ? 1 : 0;
+	return 1;
+}
+__setup("enforcing=", enforcing_setup);
+#else
+const int digsig_enforcing = 1;
+#endif
+
 static void digsig_audit(struct file *file)
 {
 	struct common_audit_data a;
@@ -135,7 +151,7 @@ static int digsig_mmap_file(struct file *file,
 	if (ret < 0)
 		digsig_audit(file);
 
-	return ret;
+	return digsig_enforcing ? ret : 0;
 }
 
 int digsig_file_mprotect(struct vm_area_struct *vma, unsigned long reqprot,

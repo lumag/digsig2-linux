@@ -19,4 +19,13 @@ config SECURITY_DIGSIG2_TRUSTED_KEYS
 	  containing trusted X.509 certificates to be included in the DigSig2
 	  trusted keyring.
 
+config SECURITY_DIGSIG2_DEVELOP
+	bool "DigSig2 Development Support"
+	default y
+	help
+	  This enables the development support option of DigSig2,
+	  which is useful for experimenting with DigSig and testing
+	  signatures.  If unsure, say Y.  With this option enabled, the
+	  kernel will start in permissive mode (log everything, deny nothing)
+	  unless you specify enforcing=1 on the kernel command line.
 endif
