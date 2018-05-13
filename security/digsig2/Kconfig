@@ -1,0 +1,22 @@
+config SECURITY_DIGSIG2
+	bool "Digital ELF Signatures support"
+	depends on SECURITY
+	depends on KEYS
+	depends on ASYMMETRIC_KEY_TYPE
+	default n
+	help
+	  This selects DigSig2, which limits execution of binaries to those
+	  signed with predefined certificates. Further information can be
+	  found in Documentation/admin-guide/LSM/DigSig2.rst.
+
+	  If you are unsure how to answer this question, answer N.
+
+if SECURITY_DIGSIG2
+config DIGSIG2_TRUSTED_KEYS
+	string "X.509 keys for DigSig2 keyring"
+	help
+	  If set, this option should be the filename of a PEM-formatted file
+	  containing trusted X.509 certificates to be included in the DigSig2
+	  trusted keyring.
+
+endif
