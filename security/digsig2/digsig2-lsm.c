@@ -39,13 +39,18 @@ __setup("enforcing=", enforcing_setup);
 const int digsig_enforcing = 1;
 #endif
 
+static void digsig_audit_pre_callback(struct audit_buffer *ab, void *a)
+{
+	audit_log_format(ab, "digsig2: denied mmap for");
+}
+
 static void digsig_audit(struct file *file)
 {
 	struct common_audit_data a;
 
 	a.type = LSM_AUDIT_DATA_FILE;
 	a.u.file = file;
-	common_lsm_audit(&a, NULL, NULL);
+	common_lsm_audit(&a, digsig_audit_pre_callback, NULL);
 }
 
 static struct file *digsig_sig_file(struct file *file)
