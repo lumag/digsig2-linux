@@ -71,6 +71,24 @@ static struct file *digsig_sig_file(struct file *file)
 	return sigfile;
 }
 
+static void *digsig_get_signature(struct file *file, loff_t *sig_len)
+{
+	struct file *sigfile;
+	void *sig;
+	int ret;
+
+	sigfile = digsig_sig_file(file);
+	if (IS_ERR(sigfile))
+		return sigfile;
+
+	ret = kernel_read_file(sigfile, &sig, sig_len, 4096, READING_UNKNOWN);
+	fput(sigfile);
+	if (ret < 0)
+		return ERR_PTR(ret);
+
+	return sig;
+}
+
 /*
  * FIXME: This needs to be rewritten to pass data in chunks, so that we do not
  * have to read file completely into the memory.  An alternative approach might
@@ -79,32 +97,24 @@ static struct file *digsig_sig_file(struct file *file)
 static int digsig_verify(struct file *file)
 {
 	struct pkcs7_message *pkcs7;
-	struct file *sigfile;
 	void *elf, *sig;
 	loff_t elf_len, sig_len;
 	int ret;
 
-	elf_len = i_size_read(file_inode(file));
-	ret = kernel_read_file(file, &elf, &elf_len, elf_len, READING_UNKNOWN);
-	if (ret < 0)
-		return ret;
-
-	sigfile = digsig_sig_file(file);
-	if (IS_ERR(sigfile)) {
-		ret = PTR_ERR(sigfile);
-		goto err_elf;
-	}
-
-	ret = kernel_read_file(sigfile, &sig, &sig_len, 4096, READING_UNKNOWN);
-	fput(sigfile);
-	if (ret < 0)
-		goto err_elf;
+	sig = digsig_get_signature(file, &sig_len);
+	if (IS_ERR(sig))
+		return PTR_ERR(sig);
 
 	pkcs7 = pkcs7_parse_message(sig, sig_len);
 	if (IS_ERR(pkcs7)) {
 		ret = PTR_ERR(pkcs7);
 		goto err_sig;
 	}
+
+	elf_len = i_size_read(file_inode(file));
+	ret = kernel_read_file(file, &elf, &elf_len, elf_len, READING_UNKNOWN);
+	if (ret < 0)
+		goto err_elf;
 
 	if (pkcs7_supply_detached_data(pkcs7, elf, elf_len) < 0) {
 		pr_err("PKCS#7 signature with non-detached data\n");
@@ -124,11 +134,11 @@ static int digsig_verify(struct file *file)
 	}
 
 error:
+	vfree(elf);
+err_elf:
 	pkcs7_free_message(pkcs7);
 err_sig:
 	vfree(sig);
-err_elf:
-	vfree(elf);
 
 	return ret;
 }
